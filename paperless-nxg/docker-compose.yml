@@ -1,0 +1,50 @@
+services:
+  broker:
+    image: redis:7
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+    networks:
+      - npmnetwork
+
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: paperless
+      POSTGRES_USER: paperless
+      POSTGRES_PASSWORD: paperless
+    networks:
+      - npmnetwork
+
+  webserver:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    restart: unless-stopped
+    depends_on:
+      - db
+      - broker
+    volumes:
+      - data:/usr/src/paperless/data
+      - media:/usr/src/paperless/media
+    env_file: .env
+    environment:
+      PAPERLESS_REDIS: redis://broker:6379
+      PAPERLESS_DBHOST: db
+      PAPERLESS_URL: https://paperless.andreazi.com
+      PAPERLESS_ADMIN_USER: paperless
+      PAPERLESS_ADMIN_PASSWORD: paperless
+      PAPERLESS_TIME_ZONE: America/Sao_Paulo
+    networks:
+      - npmnetwork
+
+volumes:
+  data:
+  media:
+  pgdata:
+  redisdata:
+
+networks:
+  npmnetwork:
+    external: true
